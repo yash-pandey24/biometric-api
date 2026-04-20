@@ -1,9 +1,12 @@
 import {
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -11,6 +14,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class CreateOperatorDto {
   @ApiProperty({ example: 1 })
   @IsInt()
+  @Min(1)
   template_id!: number;
 
   @ApiProperty({ example: 'OPR001' })
@@ -40,13 +44,34 @@ export class CreateOperatorDto {
   @IsOptional()
   @IsString()
   @Matches(/^[0-9]{10,20}$/, {
-    message: 'mobile_number must contain only digits and be 10 to 20 characters long',
+    message:
+      'mobile_number must contain only digits and be 10 to 20 characters long',
   })
   mobile_number?: string;
 
   @ApiProperty({ example: 1 })
   @IsInt()
+  @Min(1)
   assigned_center_id!: number;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/images/operator-1.jpg',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  operator_image?: string;
+
+  @ApiPropertyOptional({
+    example: {
+      aadhar: 'uploaded',
+      resume: 'uploaded',
+      certifications: ['cert1.pdf', 'cert2.pdf'],
+    },
+  })
+  @IsOptional()
+  @IsObject()
+  documents?: Record<string, any>;
 
   @ApiProperty({ example: 'admin_user' })
   @IsString()

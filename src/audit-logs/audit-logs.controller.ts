@@ -2,7 +2,9 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuditLogsService } from './audit-logs.service';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
+import { ApiExcludeController } from '@nestjs/swagger';
 
+@ApiExcludeController()
 @ApiTags('audit_logs')
 @Controller('audit-logs')
 export class AuditLogsController {

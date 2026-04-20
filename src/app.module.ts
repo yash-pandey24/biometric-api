@@ -26,6 +26,7 @@ import { CandidateAttendanceModule } from './candidate-attendance/candidate-atte
 import { GeoValidationLogsModule } from './geo-validation-logs/geo-validation-logs.module';
 import { LivenessLogsModule } from './liveness-logs/liveness-logs.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
   GeoValidationLogsModule,
   LivenessLogsModule,
   AuditLogsModule,
+  DashboardModule,
 ],
 })
 export class AppModule {}

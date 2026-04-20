@@ -1,14 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Param,
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
-
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OperatorSessionsService } from './operator-sessions.service';
 import { CreateOperatorSessionDto } from './dto/create-operator-session.dto';
 
@@ -19,11 +19,14 @@ export class OperatorSessionsController {
 
   @Post('login')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Start operator session' })
   login(@Body() dto: CreateOperatorSessionDto) {
     return this.service.create(dto);
   }
 
-  @Post('logout/:operatorId')
+  @Delete('logout/:operatorId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Soft delete active operator session' })
   logout(@Param('operatorId', ParseIntPipe) operatorId: number) {
     return this.service.logout(operatorId);
   }

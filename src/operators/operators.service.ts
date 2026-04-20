@@ -8,7 +8,7 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { DRIZZLE_DB } from '../db/db.provider';
 import { db } from '../db/db';
-import { operators } from '../db/schema';
+import { centers, operators } from '../db/schema';
 import { CreateOperatorDto } from './dto/create-operator.dto';
 import { UpdateOperatorDto } from './dto/update-operator.dto';
 
@@ -19,11 +19,28 @@ export class OperatorsService {
     private readonly drizzleDb: typeof db,
   ) {}
 
-  async create(createOperatorDto: CreateOperatorDto) {
+  async create(dto: CreateOperatorDto) {
+    const center = await this.drizzleDb
+      .select()
+      .from(centers)
+      .where(
+        and(
+          eq(centers.centerId, dto.assigned_center_id),
+          eq(centers.isDeleted, false),
+        ),
+      );
+
+    if (center.length === 0) {
+      throw new BadRequestException({
+        success: false,
+        message: 'Invalid assigned_center_id',
+      });
+    }
+
     const existingOperator = await this.drizzleDb
       .select()
       .from(operators)
-      .where(eq(operators.operatorCode, createOperatorDto.operator_code));
+      .where(eq(operators.operatorCode, dto.operator_code));
 
     if (existingOperator.length > 0) {
       throw new BadRequestException({
@@ -34,18 +51,20 @@ export class OperatorsService {
 
     try {
       await this.drizzleDb.insert(operators).values({
-        templateId: createOperatorDto.template_id,
-        operatorCode: createOperatorDto.operator_code,
-        firstName: createOperatorDto.first_name,
-        middleName: createOperatorDto.middle_name ?? null,
-        lastName: createOperatorDto.last_name ?? null,
-        mobileNumber: createOperatorDto.mobile_number ?? null,
-        assignedCenterId: createOperatorDto.assigned_center_id,
+        templateId: dto.template_id,
+        operatorCode: dto.operator_code,
+        firstName: dto.first_name,
+        middleName: dto.middle_name ?? null,
+        lastName: dto.last_name ?? null,
+        mobileNumber: dto.mobile_number ?? null,
+        assignedCenterId: dto.assigned_center_id,
+        operatorImage: dto.operator_image ?? null,
+        documents: dto.documents ?? null,
         isDeleted: false,
         createdAt: new Date(),
-        createdBy: createOperatorDto.created_by,
+        createdBy: dto.created_by,
         updatedAt: new Date(),
-        updatedBy: createOperatorDto.updated_by,
+        updatedBy: dto.updated_by,
         mvcc: 1,
       });
 
@@ -58,6 +77,7 @@ export class OperatorsService {
         success: false,
         message: 'Failed to create operator',
         detail: error?.message,
+        db_detail: error?.cause?.message ?? null,
       });
     }
   }
@@ -73,6 +93,8 @@ export class OperatorsService {
         last_name: operators.lastName,
         mobile_number: operators.mobileNumber,
         assigned_center_id: operators.assignedCenterId,
+        operator_image: operators.operatorImage,
+        documents: operators.documents,
         is_deleted: operators.isDeleted,
         created_at: operators.createdAt,
         created_by: operators.createdBy,
@@ -101,6 +123,8 @@ export class OperatorsService {
         last_name: operators.lastName,
         mobile_number: operators.mobileNumber,
         assigned_center_id: operators.assignedCenterId,
+        operator_image: operators.operatorImage,
+        documents: operators.documents,
         is_deleted: operators.isDeleted,
         created_at: operators.createdAt,
         created_by: operators.createdBy,
@@ -125,7 +149,7 @@ export class OperatorsService {
     };
   }
 
-  async update(id: number, updateOperatorDto: UpdateOperatorDto) {
+  async update(id: number, dto: UpdateOperatorDto) {
     const existingOperator = await this.drizzleDb
       .select()
       .from(operators)
@@ -138,11 +162,11 @@ export class OperatorsService {
       });
     }
 
-    if (updateOperatorDto.operator_code) {
+    if (dto.operator_code) {
       const duplicate = await this.drizzleDb
         .select()
         .from(operators)
-        .where(eq(operators.operatorCode, updateOperatorDto.operator_code));
+        .where(eq(operators.operatorCode, dto.operator_code));
 
       if (duplicate.length > 0 && duplicate[0].operatorId !== id) {
         throw new BadRequestException({
@@ -152,32 +176,57 @@ export class OperatorsService {
       }
     }
 
+    if (dto.assigned_center_id !== undefined) {
+      const center = await this.drizzleDb
+        .select()
+        .from(centers)
+        .where(
+          and(
+            eq(centers.centerId, dto.assigned_center_id),
+            eq(centers.isDeleted, false),
+          ),
+        );
+
+      if (center.length === 0) {
+        throw new BadRequestException({
+          success: false,
+          message: 'Invalid assigned_center_id',
+        });
+      }
+    }
+
     const updatePayload: Record<string, any> = {
       updatedAt: new Date(),
-      updatedBy: updateOperatorDto.updated_by ?? existingOperator[0].updatedBy,
+      updatedBy: dto.updated_by ?? existingOperator[0].updatedBy,
       mvcc: (existingOperator[0].mvcc ?? 0) + 1,
     };
 
-    if (updateOperatorDto.template_id !== undefined) {
-      updatePayload.templateId = updateOperatorDto.template_id;
+    if (dto.template_id !== undefined) {
+      updatePayload.templateId = dto.template_id;
     }
-    if (updateOperatorDto.operator_code !== undefined) {
-      updatePayload.operatorCode = updateOperatorDto.operator_code;
+    if (dto.operator_code !== undefined) {
+      updatePayload.operatorCode = dto.operator_code;
     }
-    if (updateOperatorDto.first_name !== undefined) {
-      updatePayload.firstName = updateOperatorDto.first_name;
+    if (dto.first_name !== undefined) {
+      updatePayload.firstName = dto.first_name;
     }
-    if (updateOperatorDto.middle_name !== undefined) {
-      updatePayload.middleName = updateOperatorDto.middle_name;
+    if (dto.middle_name !== undefined) {
+      updatePayload.middleName = dto.middle_name;
     }
-    if (updateOperatorDto.last_name !== undefined) {
-      updatePayload.lastName = updateOperatorDto.last_name;
+    if (dto.last_name !== undefined) {
+      updatePayload.lastName = dto.last_name;
     }
-    if (updateOperatorDto.mobile_number !== undefined) {
-      updatePayload.mobileNumber = updateOperatorDto.mobile_number;
+    if (dto.mobile_number !== undefined) {
+      updatePayload.mobileNumber = dto.mobile_number;
     }
-    if (updateOperatorDto.assigned_center_id !== undefined) {
-      updatePayload.assignedCenterId = updateOperatorDto.assigned_center_id;
+    if (dto.assigned_center_id !== undefined) {
+      updatePayload.assignedCenterId = dto.assigned_center_id;
+    }
+    if (dto.operator_image !== undefined) {
+      updatePayload.operatorImage = dto.operator_image;
+    }
+    if (dto.documents !== undefined) {
+      updatePayload.documents = dto.documents;
     }
 
     try {
@@ -195,6 +244,7 @@ export class OperatorsService {
         success: false,
         message: 'Failed to update operator',
         detail: error?.message,
+        db_detail: error?.cause?.message ?? null,
       });
     }
   }
@@ -231,6 +281,7 @@ export class OperatorsService {
         success: false,
         message: 'Failed to delete operator',
         detail: error?.message,
+        db_detail: error?.cause?.message ?? null,
       });
     }
   }

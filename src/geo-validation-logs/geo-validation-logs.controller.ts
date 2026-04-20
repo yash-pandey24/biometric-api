@@ -2,7 +2,9 @@ import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common
 import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { GeoValidationLogsService } from './geo-validation-logs.service';
 import { CreateGeoValidationLogDto } from './dto/create-geo-validation-log.dto';
+import { ApiExcludeController } from '@nestjs/swagger';
 
+@ApiExcludeController()
 @ApiTags('geo_validation_logs')
 @Controller('geo-validation-logs')
 export class GeoValidationLogsController {
